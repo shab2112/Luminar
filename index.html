@@ -1,0 +1,1372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Luminar Deep Researcher: Multi-Source Analysis</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            font-family: 'Inter', sans-serif;
+        }
+        .container {
+            max-width: 1000px;
+        }
+        /* Custom Loading Indicator */
+        .loading-ring {
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+        }
+        .loading-ring:after {
+            content: " ";
+            display: block;
+            width: 20px;
+            height: 20px;
+            margin: 2px;
+            border-radius: 50%;
+            border: 3px solid #6366f1;
+            border-color: #6366f1 transparent #6366f1 transparent;
+            animation: loading-ring-anim 1.2s linear infinite;
+        }
+        @keyframes loading-ring-anim {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        /* Styling for the header banner */
+        .brand-banner {
+            background: linear-gradient(90deg, #4f46e5 0%, #7c3aed 100%);
+            color: white;
+            padding: 1.5rem 0;
+            border-radius: 0.75rem 0.75rem 0 0;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Custom styles for the markdown output */
+        #researchAnalysis h2, #researchAnalysis h3, #researchAnalysis h4 {
+            font-weight: 700;
+            margin-top: 1.5rem;
+            margin-bottom: 0.75rem;
+        }
+        #researchAnalysis h2 {
+            font-size: 1.5rem; 
+            color: #4f46e5;
+        }
+        #researchAnalysis h3 {
+            font-size: 1.25rem; 
+            color: #1f2937;
+        }
+        #researchAnalysis p {
+            margin-bottom: 1rem;
+            line-height: 1.7;
+            color: #374151;
+        }
+        #researchAnalysis ul {
+            list-style: disc;
+            margin-left: 1.5rem;
+            margin-bottom: 1rem;
+            padding-left: 0.5rem;
+            color: #4b5563;
+        }
+        /* Styling for all generated tables */
+        .summary-table table, #researchAnalysis table, #queriesTable {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+            font-size: 0.9rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            border-radius: 0.5rem;
+            overflow: hidden;
+        }
+        .summary-table th, .summary-table td, #researchAnalysis th, #researchAnalysis td, #queriesTable th, #queriesTable td {
+            border: 1px solid #e5e7eb; 
+            padding: 12px;
+            text-align: left;
+        }
+        .summary-table th, #researchAnalysis th, #queriesTable th {
+            background-color: #eef2ff; /* indigo-50 */
+            font-weight: 700;
+            color: #4338ca; /* indigo-700 */
+        }
+        .token-metric {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.6rem 0;
+            border-bottom: 1px dashed #e5e7eb;
+        }
+        .token-metric:last-child {
+            border-bottom: none;
+        }
+        /* Tab Styles */
+        .tab-button {
+            padding: 0.75rem 1.25rem;
+            border-radius: 0.5rem 0.5rem 0 0;
+            font-weight: 600;
+            color: #6b7280;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-bottom: 3px solid transparent;
+        }
+        .tab-button:hover {
+            color: #4f46e5;
+        }
+        .tab-button.active {
+            color: #4f46e5;
+            border-color: #4f46e5;
+            background-color: #f9fafb;
+        }
+        .tab-content {
+            border-top: 1px solid #e5e7eb;
+            background-color: #f9fafb;
+            padding: 1.5rem 2rem;
+            border-radius: 0 0 0.75rem 0.75rem;
+            min-height: 400px; /* Ensure space for content */
+        }
+
+        /* Specific style for the thumbnail wrapper to ensure size and hover */
+        .video-thumbnail-wrapper {
+            flex-shrink: 0;
+            width: 160px; /* Fixed width for prominence */
+            height: 90px;
+            overflow: hidden;
+            border-radius: 0.5rem;
+            transition: box-shadow 0.3s, transform 0.3s;
+        }
+        .video-thumbnail-wrapper:hover {
+            box-shadow: 0 4px 10px rgba(79, 70, 229, 0.4);
+            transform: translateY(-2px);
+        }
+        .video-thumbnail-wrapper img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        /* Custom class for bold text without markdown artifacts */
+        .intro-text-bold {
+            font-weight: 700;
+            color: #1f2937; /* Dark gray for emphasis */
+        }
+        /* Styling for the selection table (Stage 2) */
+        #selectionTable th, #selectionTable td {
+            padding: 10px;
+            border-bottom: 1px solid #e5e7eb;
+            vertical-align: top;
+        }
+        #selectionTable th {
+            background-color: #f3f4f6;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen p-4 sm:p-8">
+
+    <div class="container mx-auto bg-white shadow-2xl rounded-xl border border-gray-200">
+        
+        <!-- BRANDING BANNER -->
+        <header class="brand-banner text-center">
+            <h1 class="text-4xl font-extrabold flex items-center justify-center space-x-3 drop-shadow-lg">
+                <span class="text-4xl">🔬</span>
+                <span>Luminar Deep Researcher</span>
+            </h1>
+            <p class="text-sm font-light mt-1 opacity-80">Multi-Agent AI Research Platform v1.0 - Modular Edition</p>
+        </header>
+
+        <div class="p-6 md:p-10">
+            <!-- INTRO MESSAGE -->
+            <p class="text-gray-600 mb-6 border-b pb-4 text-lg">
+                As your <span class="intro-text-bold">Content Intelligence Partner</span>, I'm positioned to execute a <span class="intro-text-bold">Full-Spectrum Analysis</span>. Submit the video credentials below to generate strategic insights, technical documentation, and sentiment intelligence for your leadership team.
+            </p>
+            
+            <!-- STAGE 1: Research Query and Domains -->
+            <div id="stage1" class="space-y-4">
+                <h3 class="text-xl font-bold text-gray-800">1. Define Research Scope</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end bg-indigo-50 p-4 rounded-xl shadow-inner border border-indigo-200">
+                    <div class="md:col-span-3">
+                        <label for="researchQuery" class="block text-sm font-medium text-gray-700">Research Topic / Query</label>
+                        <input type="text" id="researchQuery" placeholder="e.g., 'Best AI Agent Frameworks 2024'"
+                               class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm p-2 border focus:ring-indigo-500 focus:border-indigo-500 transition duration-150">
+                    </div>
+                    <div class="md:col-span-1">
+                        <label for="apiKey" class="block text-sm font-medium text-gray-700">Google API Key</label>
+                        <input type="password" id="apiKey" placeholder="AIzaSy..."
+                               class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm p-2 border focus:ring-indigo-500 focus:border-indigo-500 transition duration-150">
+                    </div>
+                    <div class="md:col-span-1">
+                        <label for="maxVideos" class="block text-sm font-medium text-gray-700">Max Videos to Analyze (1-5)</label>
+                        <input type="number" id="maxVideos" value="2" min="1" max="5"
+                               class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm p-2 border focus:ring-indigo-500 focus:border-indigo-500 transition duration-150">
+                    </div>
+                    <div class="md:col-span-1">
+                        <label class="block text-sm font-medium text-gray-700">Content Domains</label>
+                        <select id="contentDomains" multiple
+                            class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm p-2 border focus:ring-indigo-500 focus:border-indigo-500 transition duration-150 h-20">
+                            <!-- UPDATED: Setting defaults based on your query's context -->
+                            <option value="Technology" selected>Technology</option>
+                            <option value="Finance">Finance</option>
+                            <option value="News">News & Politics</option>
+                            <option value="Education">Education</option>
+                            <option value="Entertainment">Entertainment</option>
+                            <option value="Gaming">Gaming</option>
+                            <option value="Health">Health & Wellness</option>
+                            <option value="Science" selected>Science & Discovery</option>
+                            <option value="Travel">Travel</option>
+                            <option value="Lifestyle">Lifestyle</option>
+                        </select>
+                    </div>
+                    <div class="md:col-span-3">
+                        <button id="searchBtn"
+                                class="w-full px-6 py-2 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 transition duration-200 focus:outline-none focus:ring-4 focus:ring-indigo-500 focus:ring-opacity-50 flex items-center justify-center disabled:opacity-50"
+                                onclick="startSearch()">
+                            <span id="searchButtonText">Search Top 5 Videos</span>
+                            <span id="searchLoadingIndicator" class="loading-ring ml-3 hidden"></span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- STAGE 2: Video Selection -->
+            <div id="stage2" class="space-y-4 hidden mt-8">
+                <h3 class="text-xl font-bold text-gray-800">2. Select Videos for Deep Analysis (Configured Max: <span id="configuredMax">2</span>) </h3>
+                <div id="videoSelectionList" class="bg-gray-50 p-4 rounded-xl shadow-inner border border-gray-200 overflow-x-auto">
+                    <table id="selectionTable" class="min-w-full divide-y divide-gray-200 text-sm">
+                        <thead>
+                            <tr>
+                                <th class="w-1/12 text-center">Select</th>
+                                <th class="w-4/12 text-left">Video Source</th>
+                                <th class="w-7/12 text-left">Relevance Summary</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            <tr><td colspan="3" class="text-center text-gray-500 italic py-4">Top 5 search results will appear here...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div id="analysisControls">
+                    <button id="analyzeBtn"
+                                class="w-full px-6 py-2 bg-green-600 text-white font-semibold rounded-lg shadow-md hover:bg-green-700 transition duration-200 focus:outline-none focus:ring-4 focus:ring-green-500 focus:ring-opacity-50 flex items-center justify-center disabled:opacity-50"
+                                onclick="startAnalysis()">
+                        <span id="analyzeButtonText">Analyze Selected Videos (0)</span>
+                        <span id="analysisLoadingIndicator" class="loading-ring ml-3 hidden"></span>
+                    </button>
+                </div>
+            </div>
+
+
+            <!-- Message Box for Errors/Status -->
+            <div id="messageBox" class="hidden p-4 rounded-lg text-sm mb-6 mt-6 transition-all duration-300 font-medium" role="alert"></div>
+
+            <!-- STAGE 3: Results Area -->
+            <div id="resultsArea" class="space-y-6 hidden mt-8">
+
+                <!-- Download Buttons -->
+                <div class="flex space-x-4 justify-end">
+                    <button onclick="downloadResults('json')" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg shadow hover:bg-gray-300 text-sm font-medium flex items-center transition hover:shadow-lg"
+                        title="Download all generated data and metrics as a structured JSON file.">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                        Export Raw JSON
+                    </button>
+                    <button onclick="downloadResults('pdf')" class="px-4 py-2 bg-red-600 text-white rounded-lg shadow-lg hover:bg-red-700 text-sm font-medium flex items-center transition hover:shadow-xl"
+                        title="Note: Actual PDF requires server-side tools. This provides structured data via JSON export.">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path></svg>
+                        Generate Formal PDF (Mock)
+                    </button>
+                </div>
+                
+                <h2 class="text-2xl font-bold text-gray-800 pt-2">Source Material Data (<span id="sourceCount">0</span> Videos)</h2>
+                <div id="videoDetails" class="bg-white p-4 rounded-lg shadow-md border border-gray-200 space-y-4">
+                    <!-- Selected video details will be inserted here -->
+                </div>
+
+                <!-- TABBED NAVIGATION -->
+                <div class="mt-8">
+                    <div class="flex border-b border-gray-200">
+                        <button id="tab-overview-btn" class="tab-button active" onclick="switchTab('overview')" title="View calculated overall sentiment and category metrics.">📊 Overview</button>
+                        <button id="tab-research-btn" class="tab-button" onclick="switchTab('research')" title="View the scholarly, web-grounded research analysis report.">📘 Deep Research</button>
+                        <button id="tab-technical-btn" class="tab-button" onclick="switchTab('technical')" title="See technical coverage and impact ratings.">⚙️ Technical Summary</button>
+                        <button id="tab-comments-btn" class="tab-button" onclick="switchTab('comments')" title="Review a balanced sample of top user comments.">💬 Comment Samples</button>
+                        <button id="tab-tokens-btn" class="tab-button" onclick="switchTab('tokens')" title="Check the tokens, cost, and time taken for the LLM analysis.">💲 Usage & Cost</button>
+                    </div>
+
+                    <!-- Tab Content Containers -->
+                    <div id="tab-overview" class="tab-content" data-tab="overview">
+                        <h3 class="text-xl font-bold text-gray-800 mb-4">Overall Sentiment Metrics (Aggregated)</h3>
+                        <div id="sentimentAnalysisResults">
+                            <p class="text-center text-gray-500 italic">Sentiment results will appear here after analysis.</p>
+                        </div>
+                    </div>
+
+                    <div id="tab-research" class="tab-content hidden" data-tab="research">
+                        <!-- NEW STYLED QUERY TITLE DISPLAY -->
+                        <h3 class="text-xl font-bold text-gray-800 mb-4"><span id="styledQueryTitle" class="text-purple-700 font-extrabold text-2xl"></span></h3> 
+                        <div id="researchAnalysisContainer" class="bg-white p-4 rounded-xl shadow-inner border border-gray-200">
+                            <div id="researchAnalysis" class="text-gray-700 leading-relaxed">
+                                <p class="text-center text-gray-500 italic">Analysis will load here...</p>
+                            </div>
+                            <!-- Unaddressed Queries Section -->
+                            <div id="unaddressedQueries" class="mt-8">
+                                <!-- Confirmed: This is the section for "Top 5 Unaddressed or Important Queries (Synthesized)" -->
+                                <p class="text-lg font-bold text-red-600 border-t pt-4 mb-4">Top 5 Unaddressed or Important Queries (Synthesized)</p>
+                                <div id="queriesTableContainer" class="summary-table">
+                                    <p class="italic text-gray-500 text-center">Queries will appear here...</p>
+                                </div>
+                            </div>
+                            <div id="analysisSources">
+                                <!-- Grounding sources will be inserted here -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="tab-technical" class="tab-content hidden" data-tab="technical">
+                        <h3 class="text-xl font-bold text-gray-800 mb-4">Technical Summary & Evaluation Table (Synthesized)</h3>
+                        <div id="technicalSummaryBlock" class="bg-white p-6 rounded-xl shadow border border-gray-200 summary-table">
+                            <p class="text-center text-gray-500 italic">Technical metrics will appear here after the research analysis is complete.</p>
+                        </div>
+                    </div>
+
+                    <div id="tab-comments" class="tab-content hidden" data-tab="comments">
+                        <h3 class="text-xl font-bold text-gray-800 mb-4">Top 12 Sample Comments (Aggregated - <span id="commentCount">0</span> Total Analyzed)</h3>
+                        <div id="commentsList" class="space-y-4">
+                            <p class="text-center text-gray-500 italic">Comment samples will appear here after analysis.</p>
+                        </div>
+                    </div>
+
+                    <div id="tab-tokens" class="tab-content hidden" data-tab="tokens">
+                        <h3 class="text-xl font-bold text-gray-800 mb-4">Gemini API Usage and Cost</h3>
+                        <div id="tokenManagementArea" class="bg-gray-100 p-6 rounded-xl shadow-inner border border-gray-300 text-sm">
+                            <p class="text-center text-gray-500 italic">Token data will appear here after the research analysis is complete.</p>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <script>
+        // Global element references
+        const apiKeyInput = document.getElementById('apiKey');
+        const researchQueryInput = document.getElementById('researchQuery');
+        const contentDomainsSelect = document.getElementById('contentDomains');
+        const maxVideosInput = document.getElementById('maxVideos');
+        const configuredMaxSpan = document.getElementById('configuredMax');
+        const searchBtn = document.getElementById('searchBtn');
+        const searchLoadingIndicator = document.getElementById('searchLoadingIndicator');
+        const searchButtonText = document.getElementById('searchButtonText');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        const analysisLoadingIndicator = document.getElementById('analysisLoadingIndicator');
+        const analyzeButtonText = document.getElementById('analyzeButtonText');
+        
+        const stage1 = document.getElementById('stage1');
+        const stage2 = document.getElementById('stage2');
+        const videoSelectionList = document.getElementById('videoSelectionList');
+        const resultsArea = document.getElementById('resultsArea');
+        const videoDetailsDiv = document.getElementById('videoDetails');
+        const sourceCountSpan = document.getElementById('sourceCount');
+
+        // NEW: Reference for the styled query title
+        const styledQueryTitle = document.getElementById('styledQueryTitle');
+        
+        // Output areas
+        const messageBox = document.getElementById('messageBox');
+        const researchAnalysisDiv = document.getElementById('researchAnalysis');
+        const analysisSourcesDiv = document.getElementById('analysisSources');
+        const tokenManagementArea = document.getElementById('tokenManagementArea');
+        const commentsListDiv = document.getElementById('commentsList');
+        const commentCountSpan = document.getElementById('commentCount');
+        const sentimentResultsDiv = document.getElementById('sentimentAnalysisResults');
+        const technicalSummaryBlock = document.getElementById('technicalSummaryBlock');
+        const queriesTableContainer = document.getElementById('queriesTableContainer');
+        
+        // Global Data Storage
+        let analysisData = {};
+        let searchResults = [];
+        let selectedVideos = [];
+
+        // --- Comment Analysis Keywords and Exclusions ---
+        const positiveWords = ['great', 'excellent', 'amazing', 'fantastic', 'love', 'helpful', 'useful', 'good', 'best', 'brilliant', 'awesome', 'superb', 'effective', 'thank', 'wow'];
+        const negativeWords = ['bad', 'poor', 'terrible', 'awful', 'hate', 'confusing', 'problem', 'issue', 'not good', 'disappointed', 'unclear', 'bug', 'fail', 'wrong'];
+        const technicalKeywords = ['api', 'token', 'framework', 'architecture', 'graph', 'node', 'code', 'deployment', 'latency', 'model', 'llm', 'sdk', 'server', 'install', 'version', 'github', 'python', 'javascript', 'react', 'data', 'algorithm'];
+        
+        // Low-value comments to ignore when sampling (low relevance)
+        const lowValuePhrases = [
+            'great video', 'good video', 'nice video', 'excellent video', 'awesome video', 
+            'thanks for sharing', 'thanks for the info', 'keep up the good work', 
+            'first!', 'second!', 'subscribe', 'check out my channel', 'i love this', 'i hate this',
+            'haha', 'lol', 'funny', 'subscribed', 'subbed'
+        ];
+
+        // --- Utility Functions ---
+
+        /**
+         * Updates the configured max videos in the UI.
+         */
+        maxVideosInput.addEventListener('change', () => {
+            const val = parseInt(maxVideosInput.value);
+            if (val < 1 || val > 5) {
+                maxVideosInput.value = 2;
+                showMessage("Maximum videos must be between 1 and 5.", 'error');
+            }
+            configuredMaxSpan.textContent = maxVideosInput.value;
+            // Also reset selection if current selection exceeds new max
+            if (selectedVideos.length > val) {
+                selectedVideos.length = val;
+                renderSearchResults(); // Re-render to update checkboxes
+            }
+            updateSelectedCount();
+        });
+
+        /**
+         * Displays a status/error message.
+         * @param {string} message - The message text.
+         * @param {string} type - 'success', 'error', or 'info'.
+         */
+        function showMessage(message, type) {
+            messageBox.classList.remove('hidden', 'bg-red-100', 'text-red-700', 'bg-green-100', 'text-green-700', 'bg-blue-100', 'text-blue-700', 'border', 'border-red-400', 'border-green-400', 'border-blue-400');
+            
+            if (type === 'error') {
+                messageBox.classList.add('bg-red-100', 'text-red-700', 'border', 'border-red-400');
+            } else if (type === 'success') {
+                messageBox.classList.add('bg-green-100', 'text-green-700', 'border', 'border-green-400');
+            } else {
+                messageBox.classList.add('bg-blue-100', 'text-blue-700', 'border', 'border-blue-400');
+            }
+
+            messageBox.innerHTML = message;
+        }
+
+        /**
+         * Sets the loading state on the specified button.
+         */
+        function setLoading(button, isLoading, text) {
+            button.disabled = isLoading;
+            const textSpan = button.querySelector('span:first-child');
+            const indicator = button.querySelector('.loading-ring');
+            
+            if (textSpan) textSpan.textContent = isLoading ? 'Loading...' : text;
+            if (indicator) indicator.classList.toggle('hidden', !isLoading);
+        }
+        
+        /**
+         * Toggles the active tab display.
+         */
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.add('hidden');
+            });
+            document.getElementById(`tab-${tabName}`).classList.remove('hidden');
+
+            document.querySelectorAll('.tab-button').forEach(button => {
+                button.classList.remove('active');
+            });
+            document.getElementById(`tab-${tabName}-btn`).classList.add('active');
+        }
+
+        /**
+         * Handles the API call with exponential backoff for robustness.
+         */
+        async function fetchWithBackoff(url, maxRetries = 5, delay = 1000, options = {}) {
+            for (let i = 0; i < maxRetries; i++) {
+                try {
+                    const response = await fetch(url, options);
+                    
+                    if (response.ok) {
+                        return await response.json();
+                    }
+
+                    if (response.status === 429 || response.status >= 500) {
+                        if (i < maxRetries - 1) {
+                            await new Promise(resolve => setTimeout(resolve, delay));
+                            delay *= 2; // Exponential backoff
+                            continue;
+                        }
+                    }
+                    
+                    const errorData = await response.json().catch(() => ({}));
+                    const errorMessage = errorData.error?.errors?.[0]?.message || errorData.error?.message || `API Error: ${response.status} ${response.statusText}`;
+                    throw new Error(errorMessage);
+
+                } catch (error) {
+                    if (i === maxRetries - 1) {
+                        throw error;
+                    }
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                    delay *= 2;
+                }
+            }
+        }
+
+        // Helper to clean up residual markdown artifacts
+        const cleanText = (text) => {
+            // Remove all bolding/italic markdown (**, *, __)
+            return text.replace(/\*\*/g, '').replace(/\*/g, '').replace(/__/g, '').trim();
+        };
+
+        // --- STAGE 1: Search Logic (YouTube Data API) ---
+        
+        function updateSelectedCount() {
+            analyzeButtonText.textContent = `Analyze Selected Videos (${selectedVideos.length})`;
+            analyzeBtn.disabled = selectedVideos.length === 0;
+        }
+
+        function handleVideoSelection(videoId) {
+            const maxVideos = parseInt(maxVideosInput.value);
+            const index = selectedVideos.indexOf(videoId);
+            
+            if (index > -1) {
+                selectedVideos.splice(index, 1);
+            } else if (selectedVideos.length < maxVideos) {
+                selectedVideos.push(videoId);
+            } else {
+                showMessage(`Maximum ${maxVideos} videos can be selected for analysis (configured max).`, 'info');
+            }
+            
+            // Update UI checkboxes
+            document.querySelectorAll('.video-checkbox').forEach(checkbox => {
+                const checkedId = checkbox.value;
+                checkbox.checked = selectedVideos.includes(checkedId);
+            });
+
+            updateSelectedCount();
+        }
+
+        async function startSearch() {
+            const apiKey = apiKeyInput.value.trim();
+            const query = researchQueryInput.value.trim();
+            const maxVideos = parseInt(maxVideosInput.value);
+
+            if (!apiKey) {
+                return showMessage("Please enter your Google API Key.", 'error');
+            }
+            if (!query) {
+                return showMessage("Please enter a Research Topic / Query.", 'error');
+            }
+            
+            setLoading(searchBtn, true, 'Searching...');
+            stage2.classList.add('hidden');
+            resultsArea.classList.add('hidden');
+            showMessage("Searching YouTube for relevant content...", 'info');
+
+            try {
+                // --- MODIFIED SEARCH QUERY FOR HIGHER RELEVANCE (RELAXED FILTERS) ---
+                const selectedDomains = Array.from(contentDomainsSelect.selectedOptions).map(option => option.value);
+                
+                // Use selected domains as an OR filter if present, otherwise ignore
+                const domainFilter = selectedDomains.length > 0 ? `(${selectedDomains.join(' OR ')})` : '';
+                
+                // Exclusion filter to remove non-substantive content
+                const exclusionFilter = `-reaction -review -trailer -unboxing -vlog -live -promo -ad -short`;
+
+                // Construct the final, specific query (removing strict quotes and intent keywords)
+                const finalQuery = `${query} ${domainFilter} ${exclusionFilter}`;
+                
+                const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(finalQuery)}&type=video&maxResults=5&order=relevance&key=${apiKey}`;
+                // --- END MODIFIED SEARCH QUERY ---
+                
+                const data = await fetchWithBackoff(url);
+
+                if (data.items && data.items.length > 0) {
+                    // Filter again to remove possible duplicates or non-video items
+                    searchResults = data.items
+                        .filter(item => item.id.videoId) 
+                        .map(item => ({
+                            id: item.id.videoId,
+                            title: item.snippet.title,
+                            channel: item.snippet.channelTitle,
+                            description: item.snippet.description,
+                            thumbnail: item.snippet.thumbnails.medium.url,
+                            link: `https://www.youtube.com/watch?v=${item.id.videoId}`
+                        }));
+                    
+                    if (searchResults.length > 0) {
+                        renderSearchResults();
+                        stage2.classList.remove('hidden');
+                        showMessage(`Found ${searchResults.length} relevant videos. Select up to ${maxVideosInput.value} for deep analysis.`, 'success');
+                    } else {
+                        showMessage("Search successful, but no *highly relevant* videos were found for your specific query and domains. Try broadening your query or selecting fewer domains.", 'error');
+                    }
+                } else {
+                    showMessage("No relevant YouTube videos found for this query and selected domains.", 'error');
+                }
+
+            } catch (error) {
+                console.error("Search Error:", error);
+                showMessage(`Search Error: ${error.message}. Check your API key and query.`, 'error');
+            } finally {
+                setLoading(searchBtn, false, 'Search Top 5 Videos');
+            }
+        }
+
+        function renderSearchResults() {
+            const tbody = videoSelectionList.querySelector('tbody');
+            tbody.innerHTML = '';
+            selectedVideos = [];
+            updateSelectedCount();
+            
+            if (searchResults.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" class="text-center text-gray-500 italic py-4">No relevant videos found.</td></tr>';
+                return;
+            }
+
+            searchResults.forEach(video => {
+                const isSelected = selectedVideos.includes(video.id);
+                const row = document.createElement('tr');
+                row.className = 'hover:bg-gray-50';
+                
+                row.innerHTML = `
+                    <td class="text-center">
+                        <input type="checkbox" id="checkbox-${video.id}" value="${video.id}" class="video-checkbox h-4 w-4 text-indigo-600 border-gray-300 rounded cursor-pointer" 
+                            ${isSelected ? 'checked' : ''} onchange="handleVideoSelection('${video.id}')">
+                    </td>
+                    <td>
+                        <div class="flex items-start space-x-2">
+                            <img src="${video.thumbnail}" alt="Thumbnail" class="w-20 h-11 rounded object-cover flex-shrink-0">
+                            <div class="min-w-0">
+                                <p class="text-sm font-semibold text-gray-800 line-clamp-2" title="${video.title}">${video.title}</p>
+                                <p class="text-xs text-indigo-600">${video.channel}</p>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="text-xs text-gray-600">
+                        ${video.description.substring(0, 120)}${video.description.length > 120 ? '...' : ''}
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // --- STAGE 2 & 3: Analysis Logic ---
+        
+        async function fetchDetailsAndComments(videoIds, apiKey) {
+            const allComments = [];
+            const videoDetails = [];
+            
+            for (const videoId of videoIds) {
+                try {
+                    showMessage(`Fetching details for video ${videoId}...`, 'info');
+                    const videoDetailsResponse = await fetchDetails(videoId, apiKey);
+                    
+                    showMessage(`Fetching comments for video ${videoId}...`, 'info');
+                    const videoComments = await fetchVideoComments(videoId, apiKey);
+                    
+                    videoDetails.push({ ...videoDetailsResponse, comments: videoComments });
+                    allComments.push(...videoComments);
+
+                } catch (error) {
+                    console.error(`Error processing video ${videoId}:`, error);
+                    showMessage(`Could not analyze video ${videoId}: ${error.message}`, 'error');
+                }
+            }
+            return { allComments, videoDetails };
+        }
+
+        async function fetchDetails(videoId, apiKey) {
+            const url = `https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${videoId}&key=${apiKey}`;
+            const data = await fetchWithBackoff(url);
+
+            if (data.items && data.items.length > 0) {
+                const item = data.items[0].snippet;
+                return {
+                    id: videoId,
+                    title: item.title,
+                    channel: item.channelTitle,
+                    description: item.description,
+                    thumbnail: item.thumbnails.medium.url,
+                    link: `https://www.youtube.com/watch?v=${videoId}`
+                };
+            }
+            throw new Error("Video details not found.");
+        }
+
+        async function fetchVideoComments(videoId, apiKey, pageToken = null, comments = []) {
+            let url = `https://www.googleapis.com/youtube/v3/commentThreads?part=snippet&videoId=${videoId}&maxResults=100&key=${apiKey}`;
+            if (pageToken) {
+                url += `&pageToken=${pageToken}`;
+            }
+
+            const data = await fetchWithBackoff(url);
+
+            if (data.items) {
+                const newComments = data.items.map(item => item.snippet.topLevelComment.snippet.textOriginal);
+                comments.push(...newComments);
+            }
+            
+            const nextToken = data.nextPageToken;
+            
+            if (nextToken) {
+                // Limit to prevent excessive API usage in this demo.
+                if (comments.length < 500) { 
+                    return await fetchVideoComments(videoId, apiKey, nextToken, comments);
+                }
+            }
+            return comments;
+        }
+
+
+        async function startAnalysis() {
+            // Default selection logic: If none are selected, take the top N.
+            const maxVideos = parseInt(maxVideosInput.value);
+            if (selectedVideos.length === 0 && searchResults.length > 0) {
+                selectedVideos = searchResults.slice(0, maxVideos).map(v => v.id);
+                // Re-render UI to show new selected state
+                renderSearchResults(); 
+            }
+
+            if (selectedVideos.length === 0) {
+                return showMessage("Please search and select videos, or run the search to enable default selection.", 'error');
+            }
+            
+            const apiKey = apiKeyInput.value.trim();
+            const researchQuery = researchQueryInput.value.trim(); // Capture the query here
+
+            setLoading(analyzeBtn, true, 'Aggregating Data...');
+            resultsArea.classList.remove('hidden');
+            switchTab('overview'); 
+
+            try {
+                // 1. Fetch All Data
+                showMessage(`Step 1 of 3: Fetching data for ${selectedVideos.length} selected videos...`, 'info');
+                const { allComments, videoDetails: sources } = await fetchDetailsAndComments(selectedVideos, apiKey);
+                analysisData.sources = sources; // Store all details
+
+                // 2. Aggregate Research
+                showMessage("Step 2 of 3: Generating deep consolidated research and technical summary...", 'info');
+                
+                const combinedTitle = `${researchQuery} - Analysis of ${sources.map(s => s.title).join(' / ')}`;
+                const combinedDescription = sources.map((s, i) => `Source ${i + 1}: ${s.title}. Channel: ${s.channel}. Desc: ${s.description.substring(0, 200)}...`).join(' | ');
+
+                const { text: analysisText, sources: analysisSources, tokens, duration } = await generateResearchAnalysis(researchQuery, combinedTitle, combinedDescription, apiKey);
+                
+                // 3. Analyze Comments
+                showMessage(`Step 3 of 3: Analyzing ${allComments.length} aggregated comments...`, 'info');
+                const sentimentResults = analyzeComments(allComments);
+                
+                // 4. Render Results
+                renderSourceDetails(sources);
+                displayTokenData(tokens, duration);
+                // PASS researchQuery here to render the styled title
+                renderAnalysisAndTable(analysisText, analysisSources, researchQuery); 
+                renderSentimentResults(sentimentResults);
+                // Pass video titles to renderSampleComments for source linking
+                const videoTitles = sources.reduce((acc, source) => {
+                    acc[source.id] = source.title;
+                    return acc;
+                }, {});
+                renderSampleComments(sentimentResults.decoratedComments, videoTitles);
+
+                commentCountSpan.textContent = allComments.length;
+
+                showMessage(`Full Spectrum Analysis Complete! Data aggregated from ${sources.length} sources and ${allComments.length} comments.`, 'success');
+
+            } catch (error) {
+                console.error("Analysis Error:", error);
+                showMessage(`Critical Analysis Error: ${error.message}`, 'error');
+                resultsArea.classList.add('hidden');
+            } finally {
+                setLoading(analyzeBtn, false, `Analyze Selected Videos (${selectedVideos.length})`);
+            }
+        }
+        
+        // --- Rendering Functions for Multi-Source Output ---
+
+        function renderSourceDetails(sources) {
+            videoDetailsDiv.innerHTML = '';
+            sourceCountSpan.textContent = sources.length;
+
+            sources.forEach((item, index) => {
+                const videoLink = item.link;
+                const detailHtml = `
+                    <div class="flex items-start space-x-4 p-3 bg-white rounded-lg shadow-sm border border-indigo-100 transition hover:shadow-md" title="${item.title}">
+                        <a href="${videoLink}" target="_blank" title="View on YouTube" class="video-thumbnail-wrapper">
+                            <img src="${item.thumbnail}" alt="Video Thumbnail" class="rounded-lg shadow-md w-full h-full object-cover">
+                        </a>
+                        <div class="flex-grow min-w-0">
+                            <p class="text-lg font-bold text-gray-900 truncate">${index + 1}. ${item.title}</p>
+                            <p class="text-xs text-indigo-600 mb-1 hover:text-indigo-800 transition duration-150 cursor-pointer">${item.channel}</p>
+                            <p class="text-sm text-gray-500 line-clamp-3">${item.description}</p>
+                        </div>
+                    </div>
+                `;
+                videoDetailsDiv.innerHTML += detailHtml;
+            });
+        }
+
+        /**
+         * Generates a deep research analysis using the Gemini API with Google Search grounding.
+         */
+        async function generateResearchAnalysis(userQueryTopic, videoTitle, videoDescription, apiKey) {
+            const startTime = performance.now();
+            
+            const truncatedDescription = videoDescription.substring(0, 500) + (videoDescription.length > 500 ? '...' : '');
+            
+            const userQuery = `Generate a comprehensive, consolidated research analysis on the user's query: "${userQueryTopic}". The final report MUST be presented in two distinct sections separated by the delimiter '---TABLE_DELIMITER---': 
+1. The formal, scholarly analysis structured with main headings (use # and ##). If any comparative data is presented, use a Markdown table format within the main content body. At the end of this analysis section, include a new sub-section heading 'Unaddressed Critical Queries' and immediately follow it with a **pipe-delimited Markdown table**. This table MUST contain three columns: 'Query/Point', 'Importance Rating (1-10)', and 'Unaddressed Source Reference'. The content of this table must list the top 5 (or fewer) most important questions/points related to the user's query that are likely NOT fully addressed by the source videos, rated by importance, and specifying which video (by title or "All") missed the point.
+2. A detailed 'Technical Summary & Evaluation' table (Markdown pipe format), which must include columns for 'Key Technologies/Concepts', 'Estimated Subject Coverage Percentage', and a 'Qualitative Impact Rating'.
+
+The analysis must synthesize information from ALL video sources and search results. DO NOT use bolding or italic formatting (like ** or *) for any text, including within paragraphs, lists, or the table.
+
+Consolidated Title: "${videoTitle}". Combined context: "${truncatedDescription}"`;
+
+            const systemPrompt = "You are a world-class academic researcher and analyst. Synthesize information from the web to create a detailed, objective report. The report MUST be formatted using Markdown headings (e.g., #, ##) for the analysis and pipe-delimited tables for all metrics sections, ensuring a highly professional and technical presentation. The analysis must cover the topic deeply and include relevant technical data. DO NOT use Markdown bolding/italics (** or *) anywhere in the text.";
+
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+
+            const payload = {
+                contents: [{ parts: [{ text: userQuery }] }],
+                tools: [{ "google_search": {} }],
+                systemInstruction: { parts: [{ text: systemPrompt }] },
+            };
+            
+            const options = {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            };
+
+            const result = await fetchWithBackoff(apiUrl, 5, 1000, options);
+            const endTime = performance.now();
+            const duration = endTime - startTime;
+
+            const candidate = result.candidates?.[0];
+
+            if (candidate && candidate.content?.parts?.[0]?.text) {
+                const text = candidate.content.parts[0].text;
+                let sources = [];
+                const groundingMetadata = candidate.groundingMetadata;
+                if (groundingMetadata && groundingMetadata.groundingAttributions) {
+                    sources = groundingMetadata.groundingAttributions
+                        .map(attribution => ({
+                            uri: attribution.web?.uri,
+                            title: attribution.web?.title,
+                        }))
+                        .filter(source => source.uri && source.title);
+                }
+                
+                const usageMetadata = result.usageMetadata || {};
+
+                return { 
+                    text, 
+                    sources, 
+                    tokens: usageMetadata, 
+                    duration: duration 
+                };
+            }
+            throw new Error("Gemini API response was missing generated text or was structured incorrectly.");
+        }
+
+        /**
+         * Parses and renders a Markdown pipe-delimited table into HTML.
+         */
+        function parseAndRenderMarkdownTable(markdownTableText, targetElement) {
+            let tableHtml = [];
+            let tableJson = [];
+            const tableLines = markdownTableText.split('\n').filter(l => l.trim().startsWith('|'));
+            let isHeaderRow = true;
+            let headers = [];
+
+            if (tableLines.length > 0) {
+                tableHtml.push('<table>');
+                
+                tableLines.forEach(line => {
+                    const cells = line.split('|').map(c => cleanText(c)).filter(c => c);
+
+                    if (cells.length === 0) return;
+
+                    if (line.includes('---')) {
+                        isHeaderRow = false; 
+                    } else if (isHeaderRow) {
+                        // Header row
+                        headers = cells;
+                        tableHtml.push('<thead><tr>');
+                        cells.forEach(cell => tableHtml.push(`<th>${cell}</th>`));
+                        tableHtml.push('</tr></thead><tbody>');
+                        isHeaderRow = false; // Next non-separator line is body
+                    } else {
+                        // Data row
+                        tableHtml.push('<tr>');
+                        let rowData = {};
+                        cells.forEach((cell, index) => {
+                            tableHtml.push(`<td>${cell}</td>`);
+                            if (headers[index]) {
+                                rowData[headers[index].replace(/\s/g, '')] = cell;
+                            }
+                        });
+                        if (Object.keys(rowData).length > 0) {
+                            tableJson.push(rowData);
+                        }
+                        tableHtml.push('</tr>');
+                    }
+                });
+                
+                tableHtml.push('</tbody></table>');
+                targetElement.innerHTML = tableHtml.join('');
+            } else {
+                targetElement.innerHTML = '<p class="text-center text-red-500 italic">No structured table data found in the expected format.</p>';
+            }
+            return tableJson;
+        }
+
+        /**
+         * Renders the research analysis (excluding the technical table) and the technical table separately.
+         * @param {string} researchQuery - The original user research query.
+         */
+        function renderAnalysisAndTable(analysisText, sources, researchQuery) {
+            // NEW: Set the styled query title
+            styledQueryTitle.textContent = researchQuery;
+
+            const parts = analysisText.split('---TABLE_DELIMITER---');
+            const formalAnalysis = parts[0] || '';
+            const technicalTable = parts[1] || '';
+            
+            // Separate formal analysis into main content and queries
+            const querySplit = formalAnalysis.split('Unaddressed Critical Queries');
+            const mainContent = querySplit[0];
+            const rawQueriesTable = querySplit.length > 1 ? querySplit[1] : '';
+
+            // --- Render Formal Analysis with Markdown Table Conversion ---
+            
+            const formalLines = mainContent.split('\n');
+            let formattedHtml = [];
+            let inList = false;
+            let inTable = false;
+            let tableBuffer = []; // Buffer for collecting table lines
+            
+            formalLines.forEach(line => {
+                line = line.trim();
+                
+                // 1. Handle Markdown Table parsing (start/continue/end)
+                if (line.startsWith('|')) {
+                    if (!inTable) {
+                        inTable = true;
+                        if (inList) {
+                            formattedHtml.push('</ul>');
+                            inList = false;
+                        }
+                    }
+                    tableBuffer.push(line);
+                    return;
+                } else if (inTable) {
+                    // End of table block found
+                    inTable = false;
+                    const tableContainer = document.createElement('div');
+                    parseAndRenderMarkdownTable(tableBuffer.join('\n'), tableContainer);
+                    formattedHtml.push(tableContainer.innerHTML);
+                    tableBuffer = [];
+                }
+                
+                if (!line) {
+                    if (inList) {
+                        formattedHtml.push('</ul>');
+                        inList = false;
+                    }
+                    return;
+                }
+
+                // 2. Handle Headings and Lists
+                if (line.startsWith('# ')) {
+                    formattedHtml.push(`<h2 class="text-2xl font-bold mt-6 mb-3 text-indigo-700">${cleanText(line.substring(2))}</h2>`);
+                } else if (line.startsWith('## ')) {
+                    formattedHtml.push(`<h3 class="text-xl font-semibold mt-4 mb-2 text-gray-700">${cleanText(line.substring(3))}</h3>`);
+                } else if (line.startsWith('### ')) {
+                    formattedHtml.push(`<h4 class="text-lg font-medium mt-3 mb-1 text-gray-600">${cleanText(line.substring(4))}</h4>`);
+                } 
+                
+                else if (line.startsWith('* ') || line.startsWith('- ')) {
+                    if (!inList) {
+                        formattedHtml.push('<ul class="list-disc list-inside ml-4 space-y-1">');
+                        inList = true;
+                    }
+                    formattedHtml.push(`<li>${cleanText(line.substring(2))}</li>`);
+                }
+                
+                else {
+                    if (inList) {
+                        formattedHtml.push('</ul>');
+                        inList = false;
+                    }
+                    formattedHtml.push(`<p>${cleanText(line)}</p>`);
+                }
+            });
+            
+            // Finalize content
+            if (inList) formattedHtml.push('</ul>');
+            if (inTable) {
+                const tableContainer = document.createElement('div');
+                parseAndRenderMarkdownTable(tableBuffer.join('\n'), tableContainer);
+                formattedHtml.push(tableContainer.innerHTML);
+            }
+            researchAnalysisDiv.innerHTML = formattedHtml.join('');
+            analysisData.researchAnalysis = formalAnalysis; // Store formal analysis
+
+            // --- Render Unaddressed Queries Table ---
+            const queriesJson = parseAndRenderMarkdownTable(rawQueriesTable, queriesTableContainer);
+            analysisData.unaddressedQueries = queriesJson;
+            
+            // --- Render Technical Summary Table (Separate Block) ---
+            const techJson = parseAndRenderMarkdownTable(technicalTable, technicalSummaryBlock);
+            analysisData.technicalSummary = techJson; // Store technical table data
+            
+            // --- Render Sources ---
+            
+            if (sources.length > 0) {
+                analysisSourcesDiv.innerHTML = `
+                    <p class="text-sm font-semibold text-gray-600 border-t pt-3 mt-4">Grounding Sources (Citations):</p>
+                    <ul class="text-xs text-gray-500 space-y-1 mt-1">
+                        ${sources.map((s, index) => `
+                            <li>
+                                [${index + 1}] <a href="${s.uri}" target="_blank" class="text-indigo-500 hover:text-indigo-700 underline transition duration-150 truncate block">${s.title || s.uri}</a>
+                            </li>
+                        `).join('')}
+                    </ul>
+                `;
+                analysisData.groundingSources = sources; // Store sources
+            } else {
+                analysisSourcesDiv.innerHTML = '<p class="text-sm text-gray-500 mt-4 border-t pt-3">No specific web sources were cited for this general knowledge synthesis.</p>';
+                analysisData.groundingSources = [];
+            }
+        }
+
+        /**
+         * Performs a basic lexicon-based sentiment analysis and categorization on ALL comments.
+         */
+        function analyzeComments(comments) {
+            if (comments.length === 0) {
+                return {
+                    total: 0,
+                    counts: { positive: 0, negative: 0, neutral: 0 },
+                    categories: { general: 0, technical: 0 },
+                    overallRating: 0.00,
+                    ratingStars: '☆☆☆☆☆',
+                    overallSentiment: 'N/A',
+                    decoratedComments: []
+                };
+            }
+
+            let results = {
+                total: comments.length,
+                counts: { positive: 0, negative: 0, neutral: 0 },
+                categories: { general: 0, technical: 0 },
+                decoratedComments: []
+            };
+
+            // Map comment text to its source video title
+            const videoMap = analysisData.sources.reduce((map, source) => {
+                source.comments.forEach(commentText => {
+                    map[commentText] = source.title;
+                });
+                return map;
+            }, {});
+
+
+            comments.forEach(comment => {
+                const lowerCaseComment = comment.toLowerCase();
+                let posScore = 0;
+                let negScore = 0;
+                
+                // Sentiment Scoring
+                positiveWords.forEach(word => {
+                    if (lowerCaseComment.includes(word)) posScore++;
+                });
+                negativeWords.forEach(word => {
+                    if (lowerCaseComment.includes(word)) negScore++;
+                });
+
+                let sentiment, sentimentTag;
+                if (posScore > negScore) {
+                    results.counts.positive++;
+                    sentiment = 'Positive';
+                    sentimentTag = `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Positive</span>`;
+                } else if (negScore > posScore) {
+                    results.counts.negative++;
+                    sentiment = 'Negative';
+                    sentimentTag = `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">Negative</span>`;
+                } else {
+                    results.counts.neutral++;
+                    sentiment = 'Neutral';
+                    sentimentTag = `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">Neutral</span>`;
+                }
+                
+                // Categorization (Technical vs General)
+                let isTechnical = technicalKeywords.some(keyword => lowerCaseComment.includes(keyword));
+                let category = isTechnical ? 'Technical' : 'General';
+                let categoryTag = isTechnical ? 
+                    `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 ml-2">Technical</span>` : 
+                    `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 ml-2">General</span>`;
+
+                if (isTechnical) {
+                    results.categories.technical++;
+                } else {
+                    results.categories.general++;
+                }
+
+                results.decoratedComments.push({
+                    text: comment,
+                    sentiment: sentiment,
+                    category: category,
+                    tags: sentimentTag + categoryTag,
+                    score: posScore - negScore, // For sorting
+                    sourceTitle: videoMap[comment] || 'Unknown Source',
+                    isRelevant: isTechnical || (Math.abs(posScore - negScore) > 1) // High score difference or technical keyword suggests relevance
+                });
+            });
+
+            // Calculate Overall Rating (mapping polarity ratio to 1-5 scale)
+            const netSentiment = results.counts.positive - results.counts.negative;
+            const totalPolarity = results.counts.positive + results.counts.negative;
+            
+            let score = 3.0;
+            if (totalPolarity > 0) {
+                const netPolarityRatio = netSentiment / totalPolarity; 
+                score = ((netPolarityRatio + 1) / 2) * 4 + 1; // Maps -1 to 1 and +1 to 5
+                score = Math.min(5, Math.max(1, score)); // Clamp between 1 and 5
+            } 
+            
+            const overallRating = score.toFixed(2);
+            const starCount = Math.round(score);
+            const ratingStars = '★'.repeat(starCount) + '☆'.repeat(5 - starCount);
+            
+            let overallSentiment;
+            if (score >= 4.5) overallSentiment = 'Extremely Positive';
+            else if (score >= 3.5) overallSentiment = 'Positive';
+            else if (score >= 2.5) overallSentiment = 'Neutral';
+            else if (score >= 1.5) overallSentiment = 'Negative';
+            else overallSentiment = 'Highly Negative';
+
+            results.overallRating = overallRating;
+            results.ratingStars = ratingStars;
+            results.overallSentiment = overallSentiment;
+            
+            return results;
+        }
+
+        /**
+         * Renders the sentiment analysis results.
+         */
+        function renderSentimentResults(results) {
+            analysisData.sentimentMetrics = results; // Store sentiment metrics
+
+            const categoryTotal = results.categories.general + results.categories.technical;
+            
+            sentimentResultsDiv.innerHTML = `
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <!-- Overall Rating -->
+                    <div class="bg-indigo-100 p-4 rounded-xl text-center shadow-lg border border-indigo-300">
+                        <p class="text-2xl font-semibold text-gray-700">Overall Rating</p>
+                        <p class="text-5xl font-extrabold text-indigo-700 mt-2">${results.overallRating}</p>
+                        <p class="text-2xl text-indigo-600">${results.ratingStars}</p>
+                        <p class="text-sm text-gray-700 mt-1 font-semibold">${results.overallSentiment}</p>
+                    </div>
+                    
+                    <!-- Polarity Breakdown -->
+                    <div class="bg-white p-4 rounded-xl shadow border border-gray-200">
+                        <p class="font-bold text-gray-800 mb-2 border-b pb-1">Polarity Breakdown</p>
+                        <div class="flex justify-between text-sm py-1">
+                            <span class="text-green-600 font-semibold">Positive:</span>
+                            <span>${results.counts.positive} (${((results.counts.positive / results.total) * 100).toFixed(1)}%)</span>
+                        </div>
+                        <div class="flex justify-between text-sm py-1">
+                            <span class="text-red-600 font-semibold">Negative:</span>
+                            <span>${results.counts.negative} (${((results.counts.negative / results.total) * 100).toFixed(1)}%)</span>
+                        </div>
+                        <div class="flex justify-between text-sm py-1">
+                            <span class="text-gray-600 font-semibold">Neutral:</span>
+                            <span>${results.counts.neutral} (${((results.counts.neutral / results.total) * 100).toFixed(1)}%)</span>
+                        </div>
+                    </div>
+
+                    <!-- Category Breakdown -->
+                    <div class="bg-white p-4 rounded-xl shadow border border-gray-200">
+                        <p class="font-bold text-gray-800 mb-2 border-b pb-1">Comment Type Category</p>
+                        <div class="flex justify-between text-sm py-1">
+                            <span class="text-blue-600 font-semibold">Technical / Inquiry:</span>
+                            <span>${results.categories.technical} (${((results.categories.technical / categoryTotal) * 100).toFixed(1)}%)</span>
+                        </div>
+                        <div class="flex justify-between text-sm py-1">
+                            <span class="text-gray-600 font-semibold">General Engagement:</span>
+                            <span>${results.categories.general} (${((results.categories.general / categoryTotal) * 100).toFixed(1)}%)</span>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-2 italic">Categorization is based on keyword detection in the text.</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        /**
+         * Renders the top 12 comments, ensuring a balanced representation and prioritizing relevant comments.
+         */
+        function renderSampleComments(decoratedComments, videoTitles) {
+            commentsListDiv.innerHTML = ''; // Clear previous comments
+            
+            if (decoratedComments.length === 0) {
+                commentsListDiv.innerHTML = '<p class="text-center text-gray-500 italic">No comments to display.</p>';
+                return;
+            }
+
+            const maxComments = 12;
+            const sample = [];
+            
+            // Helper to check if a comment is low value (simple praise/spam)
+            const isLowValue = (comment) => {
+                const lowerText = comment.text.toLowerCase();
+                if (comment.score === 0 && comment.category === 'General') return true; // Low score and non-technical
+                return lowValuePhrases.some(phrase => lowerText.includes(phrase));
+            };
+
+            // Filter out low-value comments before sampling, unless they are the only ones available
+            const relevantComments = decoratedComments.filter(c => c.isRelevant && !isLowValue(c));
+            const otherComments = decoratedComments.filter(c => !c.isRelevant || isLowValue(c));
+            
+            const selectionPool = [...relevantComments, ...otherComments];
+            const selectedComments = new Set();
+            
+            // Re-sort the combined pool based on score (most polar/technical first)
+            selectionPool.sort((a, b) => b.score - a.score || (b.category === 'Technical' ? 1 : -1));
+
+
+            const findAndSelectComment = (filterFn, maxCount = 1) => {
+                let count = 0;
+                for (const comment of selectionPool) {
+                    if (filterFn(comment) && !selectedComments.has(comment) && count < maxCount && sample.length < maxComments) {
+                        sample.push(comment);
+                        selectedComments.add(comment);
+                        count++;
+                    }
+                }
+            };
+
+            // 1. Prioritize: Ensure minimum 2 relevant comments for each main sentiment
+            ['Positive', 'Negative', 'Neutral'].forEach(sentiment => {
+                findAndSelectComment(c => c.sentiment === sentiment && c.isRelevant, 2);
+            });
+            
+            // 2. Fill the remaining slots (up to maxComments) with the next best polar/technical comments
+            for (const comment of selectionPool) {
+                if (!selectedComments.has(comment) && sample.length < maxComments) {
+                    sample.push(comment);
+                    selectedComments.add(comment);
+                }
+            }
+            
+            const finalSample = Array.from(new Set(sample));
+            analysisData.commentSample = finalSample.map(({ text, sentiment, category, sourceTitle }) => ({ text, sentiment, category, sourceTitle })); // Store sample
+
+            finalSample.slice(0, maxComments).forEach((comment, index) => {
+                const sourceTitleShort = comment.sourceTitle.length > 30 ? comment.sourceTitle.substring(0, 30) + '...' : comment.sourceTitle;
+                
+                const commentDiv = document.createElement('div');
+                commentDiv.className = 'p-3 bg-white rounded-lg shadow-sm border border-gray-100 flex flex-col transition hover:shadow-md';
+                commentDiv.innerHTML = `
+                    <div class="text-gray-800 mb-2">${comment.text}</div>
+                    <div class="flex justify-between items-center text-xs text-gray-500">
+                        <span class="truncate pr-4" title="Source Video: ${comment.sourceTitle}">
+                            Source: <span class="font-semibold text-indigo-500">${sourceTitleShort}</span>
+                        </span>
+                        <div class="flex-shrink-0 flex items-center space-x-2">
+                            ${comment.tags}
+                        </div>
+                    </div>
+                `;
+                commentsListDiv.appendChild(commentDiv);
+            });
+        }
+
+        /**
+         * Calculates and displays token usage, cost, and time.
+         */
+        function displayTokenData(tokens, duration) {
+            const inputTokens = tokens.promptTokenCount || 0;
+            const outputTokens = tokens.candidatesTokenCount || 0;
+            const totalTokens = tokens.totalTokenCount || 0;
+
+            const INPUT_PRICE_PER_MILLION = 0.35;
+            const OUTPUT_PRICE_PER_MILLION = 0.70;
+
+            const inputCost = (inputTokens / 1000000) * INPUT_PRICE_PER_MILLION;
+            const outputCost = (outputTokens / 1000000) * OUTPUT_PRICE_PER_MILLION;
+            const totalCost = inputCost + outputCost;
+            
+            analysisData.tokenMetrics = {
+                inputTokens,
+                outputTokens,
+                totalTokens,
+                totalCost: totalCost.toFixed(6),
+                duration: (duration / 1000).toFixed(2) + 's'
+            };
+
+            const dataHtml = `
+                <div class="grid grid-cols-2 gap-4">
+                    <!-- Tokens -->
+                    <div>
+                        <p class="font-bold text-gray-700 mb-2 border-b">Token Usage</p>
+                        <div class="token-metric">
+                            <span class="text-gray-600">Input Tokens:</span>
+                            <span class="font-semibold text-right">${inputTokens.toLocaleString()}</span>
+                        </div>
+                        <div class="token-metric">
+                            <span class="text-gray-600">Output Tokens:</span>
+                            <span class="font-semibold text-right">${outputTokens.toLocaleString()}</span>
+                        </div>
+                        <div class="token-metric bg-gray-200 rounded-md p-1 mt-1">
+                            <span class="font-bold text-gray-700">Total Tokens:</span>
+                            <span class="font-extrabold text-indigo-600 text-right">${totalTokens.toLocaleString()}</span>
+                        </div>
+                    </div>
+
+                    <!-- Cost & Time -->
+                    <div>
+                        <p class="font-bold text-gray-700 mb-2 border-b">Cost & Performance</p>
+                        <div class="token-metric">
+                            <span class="text-gray-600">Input Cost Est.:</span>
+                            <span class="font-semibold text-green-600 text-right">$${inputCost.toFixed(6)}</span>
+                        </div>
+                        <div class="token-metric">
+                            <span class="text-gray-600">Output Cost Est.:</span>
+                            <span class="font-semibold text-green-600 text-right">$${outputCost.toFixed(6)}</span>
+                        </div>
+                        <div class="token-metric bg-gray-200 rounded-md p-1 mt-1">
+                            <span class="font-bold text-gray-700">Total Est. Cost:</span>
+                            <span class="font-extrabold text-green-700 text-right">$${totalCost.toFixed(6)}</span>
+                        </div>
+                        <div class="token-metric mt-3">
+                            <span class="font-bold text-gray-700">Time Taken:</span>
+                            <span class="font-extrabold text-right">${(duration / 1000).toFixed(2)}s</span>
+                        </div>
+                    </div>
+                </div>
+                <p class="text-xs text-gray-500 mt-4 italic">Note: Costs are approximate estimates based on current Gemini 2.5 Flash API pricing.</p>
+            `;
+
+            tokenManagementArea.innerHTML = dataHtml;
+        }
+
+        /**
+         * Initiates the download of analysis data as JSON or a mock PDF.
+         */
+        function downloadResults(type) {
+            if (analysisData.sources === undefined || analysisData.sources.length === 0) {
+                showMessage("Please run the analysis first before downloading.", 'error');
+                return;
+            }
+
+            if (type === 'json') {
+                const dataStr = JSON.stringify(analysisData, null, 2);
+                const blob = new Blob([dataStr], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `YouTube_Analysis_${researchQueryInput.value.replace(/\s/g, '_')}_${Date.now()}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                showMessage("Analysis results downloaded as JSON.", 'success');
+                
+            } else if (type === 'pdf') {
+                showMessage("PDF generation failed: Cannot generate a true PDF in a single-file app without a third-party library or server. Use the JSON export for structured data.", 'error');
+            }
+        }
+    </script>
+</body>
+</html>
